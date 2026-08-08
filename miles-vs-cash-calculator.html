@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>American Airlines miles vs. cash calculator</title>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#eef0f3; --surface:#ffffff;
+  --text:#0b0b0b; --text2:#52514e; --muted:#898781;
+  --border:rgba(11,11,11,.12); --border2:rgba(11,11,11,.24);
+  --good-bg:#eaf3de; --good:#3b6d11; --good-strong:#1f6d1f;
+  --warn-bg:#fdece9; --warn:#b23b2e; --warn-strong:#b23b2e;
+  --grid:#e1e0d9; --accent:#2a5bd7; --accent2:#eb6834;
+  --tag-obj-bg:rgba(42,91,215,.10); --tag-obj-text:#1f4fa8;
+  --tag-asm-bg:rgba(235,104,52,.10); --tag-asm-text:#b14f22;
+  --header-bg:#0b1f3f; --header-text:#ffffff;
+  --cash-accent:#2a5bd7; --miles-accent:#d64545;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#17181a; --card:#222325; --surface:#28292b;
+    --text:#ffffff; --text2:#c3c2b7; --muted:#95948d;
+    --border:rgba(255,255,255,.14); --border2:rgba(255,255,255,.28);
+    --good-bg:#20390f; --good:#a9d98a; --good-strong:#a9d98a;
+    --warn-bg:#3d1f1a; --warn:#f2a494; --warn-strong:#f2a494;
+    --grid:#2c2c2a; --accent:#6f9bf2; --accent2:#f0895a;
+    --tag-obj-bg:rgba(111,155,242,.14); --tag-obj-text:#9cbdf5;
+    --tag-asm-bg:rgba(240,137,90,.14); --tag-asm-text:#f0a97e;
+    --header-bg:#081527; --header-text:#ffffff;
+    --cash-accent:#6f9bf2; --miles-accent:#ee7466;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 0 4rem;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:0 1.25rem}
+
+/* ---------- Header ---------- */
+.topheader{background:var(--header-bg);color:var(--header-text);margin-bottom:1.5rem}
+.topheader-inner{max-width:860px;margin:0 auto;padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-badge{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-title{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topheader-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mode-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:.5px solid rgba(255,255,255,.28);
+  color:#fff;font-family:inherit;font-size:13px;font-weight:500;padding:7px 12px;border-radius:9px;cursor:pointer}
+.mode-pill:hover{background:rgba(255,255,255,.2)}
+.mode-pill svg{width:12px;height:12px}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);
+  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.icon-btn.active{background:#fff;color:var(--header-bg)}
+.icon-btn svg{width:17px;height:17px}
+
+/* ---------- Inputs panel ---------- */
+section.panel{background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:1.25rem 1.25rem 1.4rem;margin-bottom:1.25rem}
+.panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);font-weight:600;margin:0 0 .3rem}
+.panel .panel-sub{font-size:13px;color:var(--text2);margin:0 0 1rem;max-width:60ch}
+.verified{font-size:11px;color:var(--muted);display:block;margin:0 0 1rem}
+.modeToggle{display:none} /* legacy, superseded by header pill */
+
+.lbl{font-size:13px;color:var(--text2);display:block;margin-bottom:6px}
+input[type=number],select{width:100%;height:38px;padding:0 10px;font-size:14px;font-family:inherit;
+  color:var(--text);background:var(--surface);border:.5px solid var(--border);border-radius:8px}
+input[type=number]:focus,select:focus{outline:none;border-color:var(--border2);box-shadow:0 0 0 2px rgba(42,91,215,.18)}
+select:disabled,input:disabled{opacity:.5}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border2);border-radius:2px;outline:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--surface);border:1.5px solid var(--border2);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);
+  border:1.5px solid var(--border2);cursor:pointer}
+.checkrow{display:flex;align-items:center;gap:8px;height:38px}
+.checkrow input{width:16px;height:16px}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.field-grid + .field-grid{margin-top:14px}
+.advanced-only{display:none !important}
+body.advanced .advanced-only{display:block !important}
+body.advanced .advanced-only.row-flex{display:flex !important}
+.row-flex{align-items:center;gap:12px;margin-top:.9rem}
+.advanced-hint{font-size:12px;color:var(--muted);margin:.75rem 0 0}
+
+/* ---------- Top cash-vs-award summary ---------- */
+.compare-top{display:flex;align-items:center;justify-content:center;gap:clamp(14px,4vw,40px);margin-bottom:1.1rem;flex-wrap:nowrap}
+.compare-top-side{text-align:center;min-width:0}
+.ct-label{font-size:13px;color:var(--text2);margin:0 0 4px;font-weight:500}
+.ct-value{font-size:clamp(22px,6vw,32px);font-weight:700;margin:0;line-height:1.1;white-space:nowrap}
+.ct-value .ct-unit{font-size:.55em;font-weight:600;color:var(--text2)}
+.ct-sub{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+.compare-top-vs{width:34px;height:34px;border-radius:50%;border:.5px solid var(--border2);display:flex;align-items:center;
+  justify-content:center;font-size:12px;color:var(--text2);flex-shrink:0}
+
+/* ---------- Verdict banner ---------- */
+.verdict-banner{border-radius:16px;padding:1.6rem 1.5rem;margin-bottom:1.25rem;text-align:center;transition:background .15s}
+.verdict-banner.good{background:var(--good-bg)}
+.verdict-banner.warn{background:var(--warn-bg)}
+.verdict-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.verdict-banner.good .verdict-icon{background:var(--good-strong);color:#fff}
+.verdict-banner.warn .verdict-icon{background:var(--warn-strong);color:#fff}
+.verdict-icon svg{width:24px;height:24px}
+.verdict-headline{font-size:clamp(20px,4.4vw,26px);font-weight:700;margin:0 0 6px;line-height:1.2}
+.verdict-banner.good .verdict-headline{color:var(--good-strong)}
+.verdict-banner.warn .verdict-headline{color:var(--warn-strong)}
+.verdict-detail{font-size:15px;margin:0;color:var(--text2)}
+.verdict-detail b{color:var(--text)}
+
+/* ---------- Simplified compare cards ---------- */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+@media (max-width:620px){.compare-grid{grid-template-columns:1fr}}
+.compare-card{border:.5px solid var(--border);border-top:3px solid var(--accent-color,var(--border));border-radius:14px;
+  padding:1.1rem 1.15rem 1.2rem;background:var(--surface)}
+.compare-card.cc-cash{--accent-color:var(--cash-accent)}
+.compare-card.cc-miles{--accent-color:var(--miles-accent)}
+.compare-card h3{font-size:15px;margin:0 0 1rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.compare-card h3 .ci{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--accent-color);color:var(--accent-color);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.compare-card h3 .ci svg{width:14px;height:14px}
+.compare-card.cc-cash h3{color:var(--cash-accent)}
+.compare-card.cc-miles h3{color:var(--miles-accent)}
+.cc-line{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0}
+.cc-line span:first-child{color:var(--text2)}
+.cc-line span:last-child{font-weight:500;white-space:nowrap}
+.cc-divider{border-top:.5px solid var(--border);margin:6px 0}
+.cc-line.cc-sub span:first-child{color:var(--text2);font-size:13.5px}
+.cc-line.cc-sub span:last-child{font-weight:500}
+.cc-line.cc-net{padding-top:4px}
+.cc-line.cc-net span:first-child{font-weight:600;color:var(--text)}
+.cc-line.cc-net span:last-child{font-weight:700;font-size:19px}
+.compare-card.cc-cash .cc-net span:last-child{color:var(--cash-accent)}
+.compare-card.cc-miles .cc-net span:last-child{color:var(--miles-accent)}
+
+/* ---------- Stat row ---------- */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem}
+@media (max-width:560px){.stat-row{grid-template-columns:1fr}}
+.stat-tile{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;padding:.9rem 1rem}
+.stat-icon{width:38px;height:38px;border-radius:50%;background:var(--surface);border:.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)}
+.stat-icon svg{width:18px;height:18px}
+.stat-text .mcl{font-size:12px;color:var(--text2);margin:0 0 2px}
+.stat-text .mcv{font-size:19px;font-weight:600;margin:0;line-height:1.15}
+.stat-text .mcs{font-size:11px;color:var(--muted);margin:2px 0 0}
+
+/* ---------- Why box ---------- */
+.why-box{background:var(--card);border-radius:12px;padding:1.1rem 1.15rem;margin-bottom:1.25rem}
+.why-box h4{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);font-weight:600;margin:0 0 .7rem}
+.why-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.why-list li{display:flex;align-items:flex-start;gap:8px;font-size:14.5px;line-height:1.45}
+.why-list .wi{width:18px;height:18px;border-radius:50%;background:var(--good-strong);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px}
+.why-list .wi svg{width:10px;height:10px}
+.why-more-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--accent);font-family:inherit;
+  font-size:13px;font-weight:500;cursor:pointer;padding:.6rem 0 0;margin:0}
+.why-more-btn svg{width:11px;height:11px;transition:transform .15s}
+.why-more-btn.open svg{transform:rotate(180deg)}
+.why-more-body{display:none;margin-top:.6rem;padding-top:.6rem;border-top:.5px solid var(--border);font-size:13.5px;color:var(--text2)}
+.why-more-body.open{display:block}
+
+/* ---------- Full breakdown ---------- */
+details.assumptions{background:var(--card);border-radius:12px;padding:1rem 1.15rem;margin-bottom:1.25rem}
+details.assumptions summary{cursor:pointer;font-size:14.5px;font-weight:600;list-style:none;color:var(--accent)}
+details.assumptions summary::-webkit-details-marker{display:none}
+details.assumptions summary:before{content:'▸ ';display:inline-block;transition:transform .15s}
+details.assumptions[open] summary:before{content:'▾ '}
+.breakdown-body{margin-top:1rem}
+.line-item{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0;border-bottom:.5px solid var(--border)}
+.line-item:last-child{border-bottom:none}
+.line-item .li-label{color:var(--text2)}
+.line-item .li-value{font-weight:500;white-space:nowrap}
+.line-item.total{border-top:1px solid var(--border2);border-bottom:none;margin-top:2px;padding-top:8px;font-weight:600}
+.subhead{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:.9rem 0 .3rem}
+.tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.02em;padding:1px 6px;border-radius:5px;margin-left:6px;vertical-align:1px}
+.tag-obj{background:var(--tag-obj-bg);color:var(--tag-obj-text)}
+.tag-asm{background:var(--tag-asm-bg);color:var(--tag-asm-text)}
+.detail-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+@media (max-width:620px){.detail-compare-grid{grid-template-columns:1fr}}
+.detail-card{border:.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;background:var(--surface)}
+.detail-card h4{font-size:13.5px;margin:0 0 2px;font-weight:600}
+.detail-card .dc-total{font-size:19px;font-weight:700;margin:0 0 .8rem}
+.raw-tile{margin-bottom:1.25rem}
+.lp-note{font-size:13px;color:var(--text2);background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:.85rem 1rem;margin-bottom:1.25rem}
+.assumptions-body{font-size:13.5px;color:var(--text2)}
+.assumptions-body h4{font-size:12.5px;color:var(--text);margin:1rem 0 .3rem;font-weight:600}
+.assumptions-body h4:first-child{margin-top:0}
+.assumptions-body ul{margin:.2rem 0;padding-left:1.1rem}
+.assumptions-body li{margin:.25rem 0}
+.assumptions-body code{background:var(--surface);border-radius:4px;padding:1px 5px;font-size:12px}
+.sources{font-size:11.5px;color:var(--muted);margin-top:1rem;border-top:.5px solid var(--border);padding-top:.75rem}
+.sources li{margin:2px 0}
+
+/* ---------- Chart (secondary) ---------- */
+.chart-section{margin-bottom:1.25rem}
+.chart-heading{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin:0 0 .6rem}
+.chart-legend{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.chart-legend span{display:flex;align-items:center;gap:5px}
+.chart-legend i{width:10px;height:10px;border-radius:2px;background:var(--accent);display:inline-block}
+.chart-legend i.line{width:10px;height:2px;border-radius:0;background:var(--accent2)}
+.chart-wrap{position:relative;width:100%;height:220px}
+
+.footnote{font-size:12px;color:var(--muted);margin-top:1.5rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="topheader">
+  <div class="topheader-inner">
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 16l7-1.5v-6L4 7l1-1.5 5 1V3.5C10 2.7 10.9 2 12 2s2 .7 2 1.5V6.5l5-1L20 7l-5 1.5v6l7 1.5v2l-7-1-1 3.5 2 1V22l-4-1-4 1v-1.5l2-1-1-3.5-7 1v-2z" fill="#C41230"/><path d="M2 16l7-1.5v-6L4 7l1-1.5 5 1V3.5C10 2.7 10.9 2 12 2v20l-4-1-4 1v-1.5l2-1-1-3.5-7 1v-2z" fill="#005EB8" opacity=".82"/></svg>
+      </span>
+      <span class="brand-title">AA Miles vs. Cash Calculator</span>
+    </div>
+    <div class="topheader-actions">
+      <button type="button" id="modePillBtn" class="mode-pill" aria-haspopup="true">
+        <span id="modePillLabel">Simple</span>
+        <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" id="settingsBtn" class="icon-btn" aria-label="Edit your flight details" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 13.5a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19.4a2 2 0 11-4 0v-.1a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2.6a2 2 0 110-4h.1A1.65 1.65 0 004.21 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H8.6a1.65 1.65 0 001-1.51V2.6a2 2 0 114 0v.1a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V8.6c.14.6.62 1.06 1.51 1.08h.1a2 2 0 110 4h-.1a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section class="panel" id="inputsPanel" hidden>
+  <h2>Your flight</h2>
+  <p class="panel-sub">Enter your actual fare and award price. This accounts for the AAdvantage miles, Loyalty Points, and credit-card rewards you'd give up by redeeming instead of paying cash — not just cash ÷ miles.</p>
+  <span class="verified">Rules verified Aug 8, 2026</span>
+  <div class="field-grid">
+    <div><label class="lbl" for="cashFare">Cash fare, per traveler ($)</label><input type="number" id="cashFare" value="450" min="0" step="10"></div>
+    <div><label class="lbl" for="milesRequired">Miles required, per traveler</label><input type="number" id="milesRequired" value="23000" min="0" step="500"></div>
+    <div><label class="lbl" for="awardTaxes">Award taxes/fees, per traveler ($)</label><input type="number" id="awardTaxes" value="5.60" min="0" step="0.10"></div>
+  </div>
+  <div class="field-grid">
+    <div><label class="lbl" for="travelers">Travelers</label><input type="number" id="travelers" value="1" min="1" max="9" step="1"></div>
+    <div><label class="lbl" for="bags">Checked bags, per traveler</label><input type="number" id="bags" value="1" min="0" max="6" step="1"></div>
+    <div><label class="lbl" for="status">AAdvantage status</label>
+      <select id="status">
+        <option value="none" selected>Member — no status</option>
+        <option value="gold">Gold</option>
+        <option value="platinum">Platinum</option>
+        <option value="platinum_pro">Platinum Pro</option>
+        <option value="executive_platinum">Executive Platinum</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-grid">
+    <div style="grid-column:1/-1"><label class="lbl" for="card">AAdvantage credit card</label>
+      <select id="card">
+        <option value="none" selected>No AAdvantage credit card</option>
+        <option value="mileup">AAdvantage MileUp ($0 annual fee) — 2x on AA purchases, no bag benefit</option>
+        <option value="platinum_select">AAdvantage Platinum Select — 2x on AA purchases, 1st bag free</option>
+        <option value="globe">AAdvantage Globe — 3x on AA purchases, 1st bag free</option>
+        <option value="executive">AAdvantage Executive — 4x on AA purchases, 1st bag free</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-grid advanced-only" style="margin-top:14px">
+    <div><label class="lbl" for="cabin">Fare / cabin</label>
+      <select id="cabin">
+        <option value="basic_economy">Basic Economy</option>
+        <option value="main_cabin" selected>Main Cabin</option>
+        <option value="main_cabin_extra">Main Cabin Extra</option>
+        <option value="premium_economy">Premium Economy</option>
+        <option value="business">Business</option>
+        <option value="first">First</option>
+      </select>
+    </div>
+    <div><label class="lbl" for="legs">Trip type</label>
+      <select id="legs">
+        <option value="2" selected>Round trip</option>
+        <option value="1">One-way</option>
+      </select>
+    </div>
+    <div><label class="lbl" for="region">Region</label>
+      <select id="region" disabled>
+        <option value="domestic_us" selected>Domestic U.S. (only region modeled)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-grid advanced-only" style="margin-top:14px">
+    <div class="checkrow"><input type="checkbox" id="payOnline" checked><label class="lbl" for="payOnline" style="margin:0">Pay bag fees online (vs. airport)</label></div>
+    <div><label class="lbl" for="currentLP">Loyalty Points so far this program year</label><input type="number" id="currentLP" value="0" min="0" step="1000"></div>
+    <div><label class="lbl" for="govtTaxPct">Est. govt. tax excluded from mileage earning (%)</label><input type="number" id="govtTaxPct" value="7.5" min="0" max="30" step="0.5"></div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;margin-top:1.25rem">
+    <label class="lbl" for="mileValue" style="margin:0;white-space:nowrap;flex-shrink:0">Your AAdvantage mile valuation</label>
+    <input type="range" id="mileValue" min="0.5" max="3" step="0.05" value="1.5">
+    <span id="mileValueOut" style="font-size:14px;font-weight:600;min-width:52px;text-align:right">1.50&cent;</span>
+  </div>
+  <div class="advanced-only row-flex">
+    <label class="lbl" for="lpValue" style="margin:0;white-space:nowrap;flex-shrink:0">Your Loyalty Point valuation</label>
+    <input type="range" id="lpValue" min="0" max="2" step="0.05" value="0.75">
+    <span id="lpValueOut" style="font-size:14px;font-weight:600;min-width:52px;text-align:right">0.75&cent;</span>
+  </div>
+  <p class="advanced-hint">Both valuations are <span class="tag tag-asm">Assumption</span> — there's no universally correct number. Loyalty Points aren't directly redeemable; their value comes from status, so most people should value them well below a redeemable mile.</p>
+</section>
+
+<div class="compare-top">
+  <div class="compare-top-side">
+    <p class="ct-label">Cash Fare</p>
+    <p class="ct-value" id="topCashValue">$0.00</p>
+    <p class="ct-sub" id="topCashSub">per traveler</p>
+  </div>
+  <div class="compare-top-vs" aria-hidden="true">vs.</div>
+  <div class="compare-top-side">
+    <p class="ct-label">Award</p>
+    <p class="ct-value" id="topAwardValue">0 <span class="ct-unit">miles</span></p>
+    <p class="ct-sub" id="topAwardSub">+ $0.00 taxes &amp; fees</p>
+  </div>
+</div>
+
+<div class="verdict-banner" id="verdictBanner">
+  <div class="verdict-icon" id="verdictIcon"></div>
+  <p class="verdict-headline" id="verdictHeadline">—</p>
+  <p class="verdict-detail" id="verdictDetail">—</p>
+</div>
+
+<div class="compare-grid">
+  <div class="compare-card cc-cash">
+    <h3><span class="ci"><svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/></svg></span>Pay Cash</h3>
+    <div class="cc-line"><span>Cash paid</span><span id="s_cashPaid">$0.00</span></div>
+    <div class="cc-line"><span>Miles earned</span><span id="s_milesEarned">0</span></div>
+    <div class="cc-line"><span>Loyalty Points</span><span id="s_lpEarned">0</span></div>
+    <div class="cc-line" id="s_cardMilesRow"><span>Card miles</span><span id="s_cardMiles">0</span></div>
+    <div class="cc-line" id="s_cardLPRow"><span>LPs from card</span><span id="s_cardLP">0</span></div>
+    <div class="cc-line" id="s_bagRow"><span id="s_bagLabel">Checked bags</span><span id="s_bagCost">$0.00</span></div>
+    <div class="cc-divider"></div>
+    <div class="cc-line cc-sub"><span>Total Value Earned</span><span id="s_valueEarned">$0.00</span></div>
+    <div class="cc-line cc-net"><span>Net Cost</span><span id="s_netCash">$0.00</span></div>
+  </div>
+
+  <div class="compare-card cc-miles">
+    <h3><span class="ci"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg></span>Use Miles</h3>
+    <div class="cc-line"><span>Miles used</span><span id="s_milesUsed">0</span></div>
+    <div class="cc-line"><span>Taxes &amp; fees</span><span id="s_taxesFees">$0.00</span></div>
+    <div class="cc-line"><span>Bag fees</span><span id="s_milesBagCost">$0.00</span></div>
+    <div class="cc-line"><span>Rewards earned</span><span id="s_rewardsEarned">0</span></div>
+    <div class="cc-divider"></div>
+    <div class="cc-line cc-sub"><span>Total Cost</span><span id="s_totalCostMiles">$0.00</span></div>
+    <div class="cc-line cc-net"><span>Net Cost</span><span id="s_netMiles">$0.00</span></div>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v10M14.5 9.3c0-1-1-1.8-2.5-1.8s-2.5.7-2.5 1.7c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.5-.8-2.5-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+    <div class="stat-text"><p class="mcl">Effective Value <span class="tag tag-asm">Assumption</span></p><p class="mcv" id="effValue">—</p><p class="mcs">per mile</p></div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17l5-5 4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h5v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div class="stat-text"><p class="mcl">Break-even Fare <span class="tag tag-asm">Assumption</span></p><p class="mcv" id="breakevenValue">—</p><p class="mcs">per traveler</p></div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.7" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></span>
+    <div class="stat-text"><p class="mcl">Your Valuation</p><p class="mcv" id="targetValue">—</p><p class="mcs">per mile</p></div>
+  </div>
+</div>
+
+<div class="why-box">
+  <h4>Why?</h4>
+  <ul class="why-list" id="whyList"></ul>
+  <button type="button" class="why-more-btn" id="whyMoreBtn">
+    <span>Status &amp; Loyalty Point context</span>
+    <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="why-more-body" id="whyMoreBody"><div class="lp-note" id="lpNote" style="margin:0">—</div></div>
+</div>
+
+<details class="assumptions">
+  <summary>See full breakdown</summary>
+  <div class="breakdown-body">
+
+    <div class="stat-row raw-tile" style="grid-template-columns:1fr">
+      <div class="stat-tile">
+        <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 12l5-5M4 12l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="stat-text"><p class="mcl">Raw value <span class="tag tag-obj">Objective</span></p><p class="mcv" id="rawValue">—</p><p class="mcs">cash saved &divide; miles, ignoring forgone rewards</p></div>
+      </div>
+    </div>
+
+    <div class="detail-compare-grid">
+      <div class="detail-card">
+        <h4>Pay cash — full detail</h4>
+        <p class="dc-total" id="cashTotalOut">$0.00</p>
+        <div class="line-item"><span class="li-label">Fare (<span id="cashFareCount">1</span> traveler)</span><span class="li-value" id="cashFareLine">$0.00</span></div>
+        <div class="line-item"><span class="li-label">Bags</span><span class="li-value" id="cashBagLine">$0.00</span></div>
+        <div class="line-item total"><span class="li-label">Total cash outlay</span><span class="li-value" id="cashTotalLine">$0.00</span></div>
+        <p class="subhead">You'd earn <span class="tag tag-obj">Objective</span></p>
+        <div class="line-item"><span class="li-label">AAdvantage flight miles</span><span class="li-value" id="cashFlightMiles">0</span></div>
+        <div class="line-item"><span class="li-label">Loyalty Points (flight)</span><span class="li-value" id="cashFlightLP">0</span></div>
+        <div class="line-item" id="cashCardMilesRow"><span class="li-label">Credit card miles</span><span class="li-value" id="cashCardMiles">0</span></div>
+        <div class="line-item" id="cashCardLPRow"><span class="li-label">Credit card Loyalty Points</span><span class="li-value" id="cashCardLP">0</span></div>
+        <p class="subhead">Estimated value of those rewards <span class="tag tag-asm">Assumption</span></p>
+        <div class="line-item total"><span class="li-label">Effective cash cost</span><span class="li-value" id="cashEffectiveCost">$0.00</span></div>
+      </div>
+
+      <div class="detail-card">
+        <h4>Use miles — full detail</h4>
+        <p class="dc-total" id="milesTotalOut">0 mi</p>
+        <div class="line-item"><span class="li-label">Award miles (<span id="milesTravelerCount">1</span> traveler)</span><span class="li-value" id="milesMilesLine">0</span></div>
+        <div class="line-item"><span class="li-label">Taxes/fees</span><span class="li-value" id="milesTaxesLine">$0.00</span></div>
+        <div class="line-item"><span class="li-label">Bags</span><span class="li-value" id="milesBagLine">$0.00</span></div>
+        <div class="line-item total"><span class="li-label">Total cash out-of-pocket</span><span class="li-value" id="milesCashOutLine">$0.00</span></div>
+        <p class="subhead">Rewards forgone <span class="tag tag-obj">Objective</span></p>
+        <div class="line-item"><span class="li-label">AAdvantage flight miles</span><span class="li-value" id="milesFlightMiles">0</span></div>
+        <div class="line-item"><span class="li-label">Loyalty Points (flight)</span><span class="li-value" id="milesFlightLP">0</span></div>
+        <div class="line-item" id="milesCardMilesRow"><span class="li-label">Credit card miles</span><span class="li-value" id="milesCardMiles">0</span></div>
+        <div class="line-item" id="milesCardLPRow"><span class="li-label">Credit card Loyalty Points</span><span class="li-value" id="milesCardLP">0</span></div>
+        <p class="subhead">Value of what you give up <span class="tag tag-asm">Assumption</span></p>
+        <div class="line-item total"><span class="li-label">Effective redemption value</span><span class="li-value" id="milesEffectiveValue">0.00&cent;/mi</span></div>
+      </div>
+    </div>
+
+    <div class="assumptions-body">
+      <h4>How this calculation works</h4>
+      <p><b>What counts as cash cost.</b> Fare × travelers, plus any checked-bag fees not waived by your cabin, status, or credit card. Bag benefits don't stack — you get whichever single free-bag allowance is largest, not all of them added together.</p>
+      <p><b>What counts as award cost.</b> Miles required × travelers, plus award taxes/carrier-imposed fees × travelers, plus the same bag-fee logic as the cash side (status/card bag waivers apply to award tickets too).</p>
+      <h4>How AA flight miles are calculated <span class="tag tag-obj">Objective formula</span></h4>
+      <p><code>base fare × (1 − est. govt. tax %) × 5 miles/$ × (1 + status bonus %)</code>. American earns AAdvantage miles on the base fare only, excluding government-imposed taxes — we estimate that tax portion at 7.5% by default (adjustable in Advanced mode) since it isn't broken out in the ticket price you enter. Basic Economy tickets purchased on or after Dec 17, 2025 earn $0.</p>
+      <h4>How Loyalty Points are calculated <span class="tag tag-obj">Objective formula</span></h4>
+      <p>1 Loyalty Point per redeemable mile earned from flying — this includes your elite status bonus (not just the base 5/$), since the bonus isn't a "promotional" mile. From credit-card spend, only the card's base 1×/$ counts toward Loyalty Points — the accelerated 2×/3×/4× category bonus does not.</p>
+      <h4>How credit-card rewards are calculated <span class="tag tag-obj">Objective formula</span></h4>
+      <p>Card miles = total cash outlay (fare + bags, since it's all charged to the card) × the card's AA-purchase multiplier. This is separate from — and additive with — AAdvantage flight miles, not a replacement for them.</p>
+      <h4>How baggage is calculated</h4>
+      <p>Domestic U.S. pricing only (v1 scope): $45/$55 online (1st/2nd bag), +$5 at the airport, +$5 more on Basic Economy, flat $200 for a 3rd+ bag. Free-bag allowances come from your cabin, AAdvantage status, or credit card — whichever is greatest.</p>
+      <h4>How opportunity cost affects the result <span class="tag tag-asm">Assumption-driven</span></h4>
+      <p>"Effective value" nets the forgone AAdvantage miles, Loyalty Points, and credit-card rewards (all priced using your two valuation sliders) out of the raw cash-vs-miles gap, then divides by the miles required. That's the number compared against your personal mile valuation to produce the recommendation.</p>
+      <h4>What's user-controlled vs. fixed</h4>
+      <p>Objective: mileage formulas, elite bonus percentages, Loyalty Point thresholds, published bag fees, the taxes/miles/fare you enter. Assumption: what a mile and a Loyalty Point are worth to you, and the government-tax share of the fare.</p>
+      <h4>Not yet modeled</h4>
+      <ul>
+        <li>Partner/codeshare-operated flights (distance-based earning, different fuel-surcharge rules — especially British Airways/Iberia)</li>
+        <li>International award taxes and bag rules (this build is domestic U.S. only)</li>
+        <li>Seat-selection or upgrade-certificate pricing</li>
+        <li>Promotional/targeted bonus mile offers, sign-up bonuses, or elite-qualifying dollar (EQD)-style requirements beyond Loyalty Points</li>
+        <li>The Citi AAdvantage Executive card's $150K/year 5× spend tier (modeled at its base 4×)</li>
+      </ul>
+      <p class="sources"><b>Sources (verified 2026-08-08):</b></p>
+      <ul class="sources">
+        <li>aa.com — AAdvantage terms &amp; conditions, Loyalty Points &amp; status, earn-miles, use-miles pages</li>
+        <li>news.aa.com — 2026 AAdvantage status-freeze release; 2026 bag-fee &amp; Basic Economy update release</li>
+        <li>aa.com — checked baggage policy</li>
+        <li>creditcards.aa.com — MileUp, Platinum Select, Globe, Executive card pages</li>
+        <li>citi.com — AAdvantage miles vs. Loyalty Points</li>
+      </ul>
+    </div>
+  </div>
+</details>
+
+<div class="chart-section">
+  <p class="chart-heading">Effective value across a range of fares</p>
+  <div class="chart-legend">
+    <span><i></i>Effective ¢/mile at each fare</span>
+    <span><i class="line"></i>Your valuation threshold</span>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart" role="img" aria-label="Line chart showing effective cents per mile rising with cash fare, crossing a horizontal threshold line at your chosen mile valuation">Effective cents per mile rises as the cash fare rises; redeeming makes sense where the curve crosses your valuation threshold.</canvas>
+  </div>
+</div>
+
+<p class="footnote">American Airlines–specific tool. Not affiliated with American Airlines or AAdvantage. Figures are estimates for planning — always confirm exact miles, taxes, and fees at checkout.</p>
+
+</div>
+
+<script src="calculator-engine.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var chart = null;
+
+  function fmtUSD(x){
+    var sign = x < 0 ? '-' : '';
+    return sign + '$' + Math.abs(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function fmtMiles(x){ return Math.round(x).toLocaleString(); }
+  function fmtCents(x){ return x.toFixed(2) + '¢'; }
+  var checkIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var thumbsIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M7 10v11H4a1 1 0 01-1-1v-9a1 1 0 011-1h3zm0 0l4.5-7a2 2 0 013.5 1.3V9h4.8a2 2 0 011.98 2.3l-1.2 8A2 2 0 0118.6 21H10a3 3 0 01-3-3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  var cashWinIcon = '<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.7"/></svg>';
+
+  function readInputs(){
+    return {
+      cashFarePerPerson: parseFloat($('cashFare').value) || 0,
+      milesPerPerson: parseFloat($('milesRequired').value) || 0,
+      awardTaxesPerPerson: parseFloat($('awardTaxes').value) || 0,
+      travelers: parseInt($('travelers').value,10) || 1,
+      bagsPerTraveler: parseInt($('bags').value,10) || 0,
+      statusKey: $('status').value,
+      cardKey: $('card').value,
+      cabinKey: $('cabin').value,
+      legs: parseInt($('legs').value,10) || 2,
+      payOnline: $('payOnline').checked,
+      currentLP: parseFloat($('currentLP').value) || 0,
+      govtTaxPct: parseFloat($('govtTaxPct').value),
+      mileValueCents: parseFloat($('mileValue').value),
+      lpValueCents: parseFloat($('lpValue').value)
+    };
+  }
+
+  function setLineItem(rowId, valueId, show, value){
+    var row = rowId ? $(rowId) : null;
+    if (row) row.style.display = show ? 'flex' : 'none';
+    if (valueId) $(valueId).textContent = value;
+  }
+
+  function render(){
+    var inputs = readInputs();
+    var r = AACalc.calculateFullComparison(inputs);
+    var hasCard = inputs.cardKey !== 'none';
+
+    // ---- Top cash vs. award summary ----
+    $('topCashValue').textContent = fmtUSD(inputs.cashFarePerPerson);
+    $('topCashSub').textContent = inputs.travelers > 1 ? ('per traveler (×' + inputs.travelers + ')') : 'per traveler';
+    $('topAwardValue').innerHTML = fmtMiles(inputs.milesPerPerson) + ' <span class="ct-unit">miles</span>';
+    $('topAwardSub').textContent = '+ ' + fmtUSD(inputs.awardTaxesPerPerson) + ' taxes & fees' + (inputs.travelers > 1 ? ' (×' + inputs.travelers + ')' : '');
+
+    // ---- Verdict banner ----
+    var banner = $('verdictBanner');
+    banner.className = 'verdict-banner ' + (r.recommendation.useMiles ? 'good' : 'warn');
+    $('verdictIcon').innerHTML = r.recommendation.useMiles ? thumbsIcon : cashWinIcon;
+    $('verdictHeadline').textContent = 'Best Choice: ' + (r.recommendation.useMiles ? 'Use Miles' : 'Pay Cash');
+    var diff = r.recommendation.diffCents;
+    var diffAbsDollars = Math.abs(diff)/100 * r.awardResult.totalMiles;
+    $('verdictDetail').innerHTML = r.recommendation.useMiles
+      ? 'You\'re ahead by <b>' + fmtUSD(diffAbsDollars) + '</b> (' + fmtCents(r.redemption.effectiveCentsPerMile) + ' per mile)'
+      : 'Cash is ahead by <b>' + fmtUSD(diffAbsDollars) + '</b> (miles only worth ' + fmtCents(r.redemption.effectiveCentsPerMile) + ' here)';
+
+    // ---- Simplified compare cards ----
+    $('s_cashPaid').textContent = fmtUSD(r.totalCashFare);
+    $('s_milesEarned').textContent = fmtMiles(r.flightEarnings.totalMiles);
+    $('s_lpEarned').textContent = fmtMiles(r.flightEarnings.loyaltyPoints);
+    setLineItem('s_cardMilesRow', 's_cardMiles', hasCard, fmtMiles(r.cardRewards.cardMiles));
+    setLineItem('s_cardLPRow', 's_cardLP', hasCard, fmtMiles(r.cardRewards.cardLoyaltyPoints));
+    var bagCount = inputs.bagsPerTraveler;
+    $('s_bagLabel').textContent = bagCount === 1 ? '1 checked bag' : (bagCount + ' checked bags');
+    $('s_bagCost').textContent = fmtUSD(r.bagResult.totalCost);
+    $('s_valueEarned').textContent = fmtUSD(r.oppCost.totalForgoneValue);
+    $('s_netCash').textContent = fmtUSD(r.totalCashOutlay - r.oppCost.totalForgoneValue);
+
+    $('s_milesUsed').textContent = fmtMiles(r.awardResult.totalMiles);
+    $('s_taxesFees').textContent = fmtUSD(r.awardResult.totalTaxes);
+    $('s_milesBagCost').textContent = fmtUSD(r.awardResult.bagCost);
+    $('s_rewardsEarned').textContent = '0';
+    $('s_totalCostMiles').textContent = fmtUSD(r.awardResult.totalCashOutOfPocket);
+    $('s_netMiles').textContent = fmtUSD(r.awardResult.totalCashOutOfPocket);
+
+    // ---- Stat row ----
+    $('effValue').textContent = fmtCents(r.redemption.effectiveCentsPerMile);
+    $('breakevenValue').textContent = (r.breakevenFare == null || !isFinite(r.breakevenFare))
+      ? 'n/a' : fmtUSD(r.breakevenFare);
+    $('targetValue').textContent = fmtCents(inputs.mileValueCents);
+    $('rawValue').textContent = fmtCents(r.redemption.rawCentsPerMile);
+
+    // ---- Why checklist ----
+    var whyItems = [];
+    if (!r.flightEarnings.earns) {
+      whyItems.push('This fare doesn’t earn AAdvantage miles or Loyalty Points (Basic Economy) — nothing lost by using miles here.');
+    } else {
+      whyItems.push('Paying cash earns <b>' + fmtMiles(r.flightEarnings.totalMiles) + ' miles</b> + <b>' + fmtMiles(r.flightEarnings.loyaltyPoints) + ' LPs</b>.');
+    }
+    if (hasCard && r.cardRewards.cardMiles > 0) {
+      whyItems.push('You’d also earn <b>' + fmtMiles(r.cardRewards.cardMiles) + ' card miles</b> + <b>' + fmtMiles(r.cardRewards.cardLoyaltyPoints) + ' LPs</b> from your credit card.');
+    }
+    whyItems.push('This redemption is worth <b>' + fmtCents(r.redemption.effectiveCentsPerMile) + ' per mile</b> vs. your <b>' + fmtCents(inputs.mileValueCents) + '</b> target.');
+    $('whyList').innerHTML = whyItems.map(function(t){ return '<li><span class="wi">' + checkIcon + '</span><span>' + t + '</span></li>'; }).join('');
+
+    // ---- Full breakdown: detailed cards ----
+    $('cashFareCount').textContent = inputs.travelers;
+    $('cashFareLine').textContent = fmtUSD(r.totalCashFare);
+    $('cashBagLine').textContent = fmtUSD(r.bagResult.totalCost);
+    $('cashTotalLine').textContent = fmtUSD(r.totalCashOutlay);
+    $('cashTotalOut').textContent = fmtUSD(r.totalCashOutlay);
+    $('cashFlightMiles').textContent = fmtMiles(r.flightEarnings.totalMiles);
+    $('cashFlightLP').textContent = fmtMiles(r.flightEarnings.loyaltyPoints);
+    setLineItem('cashCardMilesRow','cashCardMiles', hasCard, fmtMiles(r.cardRewards.cardMiles));
+    setLineItem('cashCardLPRow','cashCardLP', hasCard, fmtMiles(r.cardRewards.cardLoyaltyPoints));
+    $('cashEffectiveCost').textContent = fmtUSD(r.totalCashOutlay - r.oppCost.totalForgoneValue);
+
+    $('milesTravelerCount').textContent = inputs.travelers;
+    $('milesTotalOut').textContent = fmtMiles(r.awardResult.totalMiles) + ' mi';
+    $('milesMilesLine').textContent = fmtMiles(r.awardResult.totalMiles);
+    $('milesTaxesLine').textContent = fmtUSD(r.awardResult.totalTaxes);
+    $('milesBagLine').textContent = fmtUSD(r.awardResult.bagCost);
+    $('milesCashOutLine').textContent = fmtUSD(r.awardResult.totalCashOutOfPocket);
+    $('milesFlightMiles').textContent = fmtMiles(r.flightEarnings.totalMiles);
+    $('milesFlightLP').textContent = fmtMiles(r.flightEarnings.loyaltyPoints);
+    setLineItem('milesCardMilesRow','milesCardMiles', hasCard, fmtMiles(r.cardRewards.cardMiles));
+    setLineItem('milesCardLPRow','milesCardLP', hasCard, fmtMiles(r.cardRewards.cardLoyaltyPoints));
+    $('milesEffectiveValue').textContent = fmtCents(r.redemption.effectiveCentsPerMile) + '/mi';
+
+    // ---- LP status-progress note (inside Why > expand) ----
+    var lp = r.lpContext;
+    var forgoneLP = r.flightEarnings.loyaltyPoints + r.cardRewards.cardLoyaltyPoints;
+    if (!lp.nextTier) {
+      $('lpNote').textContent = 'You’re already at the top AAdvantage tier (Executive Platinum) — no further status to chase with these Loyalty Points.';
+    } else if (forgoneLP <= 0) {
+      $('lpNote').textContent = 'This itinerary doesn’t generate Loyalty Points either way, so it won’t move you toward ' + lp.nextTierLabel + '.';
+    } else {
+      $('lpNote').innerHTML = 'Paying cash would earn <b>' + fmtMiles(forgoneLP) + ' Loyalty Points</b> — about ' +
+        lp.closesGapPct.toFixed(1) + '% of the ' + fmtMiles(lp.nextThreshold) + ' needed for <b>' + lp.nextTierLabel + '</b>' +
+        (lp.lpRemainingForNextTier > 0 ? ' (' + fmtMiles(lp.lpRemainingForNextTier) + ' to go from where you entered above)' : ' — you’ve already cleared that threshold') + '.';
+    }
+
+    updateChart(inputs, r);
+  }
+
+  function updateChart(inputs, current){
+    var maxFare = Math.max(200, Math.ceil((inputs.cashFarePerPerson * 2) / 50) * 50);
+    var labels = [], data = [], line = [], radii = [], best = 0, bestDist = Infinity;
+    for (var i = 0; i <= 40; i++){
+      var fare = maxFare * i / 40;
+      var scenario = Object.assign({}, inputs, { cashFarePerPerson: fare });
+      var res = AACalc.calculateFullComparison(scenario);
+      labels.push('$' + Math.round(fare));
+      data.push(parseFloat(res.redemption.effectiveCentsPerMile.toFixed(3)));
+      line.push(inputs.mileValueCents);
+      var dist = Math.abs(fare - inputs.cashFarePerPerson);
+      if (dist < bestDist){ bestDist = dist; best = i; }
+    }
+    for (var j = 0; j <= 40; j++) radii.push(j === best ? 6 : 0);
+
+    var cs = getComputedStyle(document.documentElement);
+    var mut = cs.getPropertyValue('--muted').trim() || '#898781';
+    var grid = cs.getPropertyValue('--grid').trim() || '#e1e0d9';
+    var accent = cs.getPropertyValue('--accent').trim() || '#2a5bd7';
+    var accent2 = cs.getPropertyValue('--accent2').trim() || '#eb6834';
+
+    if (chart){
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+      chart.data.datasets[0].pointRadius = radii;
+      chart.data.datasets[0].borderColor = accent;
+      chart.data.datasets[0].backgroundColor = accent;
+      chart.data.datasets[0].pointBackgroundColor = accent;
+      chart.data.datasets[1].data = line;
+      chart.data.datasets[1].borderColor = accent2;
+      chart.options.scales.y.ticks.color = mut;
+      chart.options.scales.x.ticks.color = mut;
+      chart.options.scales.y.grid.color = grid;
+      chart.update();
+      return;
+    }
+    chart = new Chart($('chart'), {
+      type: 'line',
+      data: { labels: labels, datasets: [
+        { label: 'Effective ¢/mile', data: data, borderColor: accent, backgroundColor: accent, borderWidth: 2, tension: .25, pointRadius: radii, pointBackgroundColor: accent, fill: false },
+        { label: 'Your threshold', data: line, borderColor: accent2, borderWidth: 2, borderDash: [6,4], pointRadius: 0, fill: false }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + c.parsed.y.toFixed(2) + '¢'; } } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: mut, font: { size: 11 }, callback: function(x){ return x.toFixed(1) + '¢'; } }, grid: { color: grid } },
+          x: { ticks: { color: mut, font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false } }
+        } }
+    });
+  }
+
+  // Mode toggle (header pill)
+  function setMode(advanced){
+    document.body.classList.toggle('advanced', advanced);
+    $('modePillLabel').textContent = advanced ? 'Advanced' : 'Simple';
+  }
+  $('modePillBtn').addEventListener('click', function(){
+    setMode(!document.body.classList.contains('advanced'));
+  });
+
+  // Settings gear toggles the inputs panel
+  $('settingsBtn').addEventListener('click', function(){
+    var panel = $('inputsPanel');
+    var willShow = panel.hidden;
+    panel.hidden = !willShow;
+    this.classList.toggle('active', willShow);
+    this.setAttribute('aria-expanded', String(willShow));
+    if (willShow) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Why > expand for LP/status context
+  $('whyMoreBtn').addEventListener('click', function(){
+    var open = $('whyMoreBody').classList.toggle('open');
+    this.classList.toggle('open', open);
+  });
+
+  $('mileValue').addEventListener('input', function(){ $('mileValueOut').textContent = fmtCents(parseFloat(this.value)); });
+  $('lpValue').addEventListener('input', function(){ $('lpValueOut').textContent = fmtCents(parseFloat(this.value)); });
+
+  var ids = ['cashFare','milesRequired','awardTaxes','travelers','bags','status','card','cabin','legs','payOnline','currentLP','govtTaxPct','mileValue','lpValue'];
+  ids.forEach(function(id){
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  setMode(false);
+  render();
+})();
+</script>
+</body>
+</html>
