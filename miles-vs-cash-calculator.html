@@ -81,15 +81,47 @@ body.advanced .advanced-only.row-flex{display:flex !important}
 .row-flex{align-items:center;gap:12px;margin-top:.9rem}
 .advanced-hint{font-size:12px;color:var(--muted);margin:.75rem 0 0}
 
-/* ---------- Top cash-vs-award summary ---------- */
-.compare-top{display:flex;align-items:center;justify-content:center;gap:clamp(14px,4vw,40px);margin-bottom:1.1rem;flex-wrap:nowrap}
-.compare-top-side{text-align:center;min-width:0}
-.ct-label{font-size:13px;color:var(--text2);margin:0 0 4px;font-weight:500}
-.ct-value{font-size:clamp(22px,6vw,32px);font-weight:700;margin:0;line-height:1.1;white-space:nowrap}
-.ct-value .ct-unit{font-size:.55em;font-weight:600;color:var(--text2)}
-.ct-sub{font-size:12.5px;color:var(--muted);margin:4px 0 0}
-.compare-top-vs{width:34px;height:34px;border-radius:50%;border:.5px solid var(--border2);display:flex;align-items:center;
-  justify-content:center;font-size:12px;color:var(--text2);flex-shrink:0}
+/* ---------- What are you comparing? (primary inputs) ---------- */
+.what-compare{margin-bottom:1.25rem}
+.wc-heading{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);font-weight:600;margin:0 0 .75rem;text-align:center}
+.wc-grid{display:flex;align-items:stretch;gap:14px}
+@media (max-width:620px){.wc-grid{flex-direction:column}}
+.wc-col{flex:1;min-width:0;background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;padding:1.15rem 1.25rem;transition:border-color .15s}
+.wc-col.wc-cash{border-top:3px solid var(--cash-accent)}
+.wc-col.wc-miles{border-top:3px solid var(--miles-accent)}
+.wc-col.wc-cash:focus-within{border-color:var(--cash-accent)}
+.wc-col.wc-miles:focus-within{border-color:var(--miles-accent)}
+.wc-label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:0 0 .9rem}
+.wc-col.wc-cash .wc-label{color:var(--cash-accent)}
+.wc-col.wc-miles .wc-label{color:var(--miles-accent)}
+.wc-label .ci{width:24px;height:24px;border-radius:7px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wc-label .ci svg{width:13px;height:13px}
+.wc-input-row{display:flex;align-items:baseline;gap:6px;min-width:0}
+.wc-prefix,.wc-suffix{color:var(--text2);font-weight:600;font-size:26px;flex-shrink:0}
+.wc-input-row input{border:none;background:transparent;font-size:28px;font-weight:700;color:var(--text);
+  padding:2px 0;width:100%;min-width:0;font-family:inherit;-moz-appearance:textfield}
+.wc-input-row input::-webkit-outer-spin-button,.wc-input-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.wc-input-row input::placeholder{color:var(--muted);font-weight:500;font-size:.56em}
+.wc-input-row input:focus{outline:none}
+.wc-taxrow{display:flex;align-items:baseline;gap:6px;margin-top:.7rem;padding-top:.7rem;border-top:.5px solid var(--border)}
+.wc-taxrow .wc-prefix{font-size:15px}
+.wc-taxrow input{font-size:16px;font-weight:600}
+.wc-taxrow input::placeholder{font-size:.85em}
+.wc-taxlabel{font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.wc-sub{font-size:12px;color:var(--muted);margin:.5rem 0 0}
+.wc-vs{display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:12px;padding:0 2px}
+@media (max-width:620px){.wc-vs{display:none}}
+
+/* ---------- Empty-state prompt ---------- */
+.empty-prompt{display:none;text-align:center;border-radius:16px;padding:2.2rem 1.5rem;margin-bottom:1.25rem;background:var(--card)}
+.empty-prompt-icon{width:44px;height:44px;border-radius:50%;background:var(--surface);border:.5px solid var(--border2);
+  color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.empty-prompt-icon svg{width:20px;height:20px}
+.empty-prompt h2{font-size:19px;font-weight:700;margin:0 0 6px;color:var(--text)}
+.empty-prompt p{font-size:14px;color:var(--text2);margin:0;max-width:44ch;margin-left:auto;margin-right:auto}
+body.has-data .empty-prompt{display:none}
+body:not(.has-data) .empty-prompt{display:block}
+body:not(.has-data) #resultsArea{display:none}
 
 /* ---------- Verdict banner ---------- */
 .verdict-banner{border-radius:16px;padding:1.6rem 1.5rem;margin-bottom:1.25rem;text-align:center;transition:background .15s}
@@ -225,17 +257,12 @@ details.assumptions[open] summary:before{content:'▾ '}
 <div class="wrap">
 
 <section class="panel" id="inputsPanel" hidden>
-  <h2>Your flight</h2>
-  <p class="panel-sub">Enter your actual fare and award price. This accounts for the AAdvantage miles, Loyalty Points, and credit-card rewards you'd give up by redeeming instead of paying cash — not just cash ÷ miles.</p>
+  <h2>Trip details</h2>
+  <p class="panel-sub">Travelers, bags, AAdvantage status, and credit card all change the recommendation — enter your cash price and miles above first, then fine-tune these.</p>
   <span class="verified">Rules verified Aug 8, 2026</span>
   <div class="field-grid">
-    <div><label class="lbl" for="cashFare">Cash fare, per traveler ($)</label><input type="number" id="cashFare" value="450" min="0" step="10"></div>
-    <div><label class="lbl" for="milesRequired">Miles required, per traveler</label><input type="number" id="milesRequired" value="23000" min="0" step="500"></div>
-    <div><label class="lbl" for="awardTaxes">Award taxes/fees, per traveler ($)</label><input type="number" id="awardTaxes" value="5.60" min="0" step="0.10"></div>
-  </div>
-  <div class="field-grid">
     <div><label class="lbl" for="travelers">Travelers</label><input type="number" id="travelers" value="1" min="1" max="9" step="1"></div>
-    <div><label class="lbl" for="bags">Checked bags, per traveler</label><input type="number" id="bags" value="1" min="0" max="6" step="1"></div>
+    <div><label class="lbl" for="bags">Checked bags, per traveler</label><input type="number" id="bags" value="0" min="0" max="6" step="1"></div>
     <div><label class="lbl" for="status">AAdvantage status</label>
       <select id="status">
         <option value="none" selected>Member — no status</option>
@@ -300,19 +327,40 @@ details.assumptions[open] summary:before{content:'▾ '}
   <p class="advanced-hint">Both valuations are <span class="tag tag-asm">Assumption</span> — there's no universally correct number. Loyalty Points aren't directly redeemable; their value comes from status, so most people should value them well below a redeemable mile.</p>
 </section>
 
-<div class="compare-top">
-  <div class="compare-top-side">
-    <p class="ct-label">Cash Fare</p>
-    <p class="ct-value" id="topCashValue">$0.00</p>
-    <p class="ct-sub" id="topCashSub">per traveler</p>
+<section class="what-compare">
+  <p class="wc-heading">What are you comparing?</p>
+  <div class="wc-grid">
+    <div class="wc-col wc-cash">
+      <p class="wc-label"><span class="ci"><svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/></svg></span>Pay Cash</p>
+      <div class="wc-input-row">
+        <span class="wc-prefix">$</span>
+        <input type="number" id="cashFare" inputmode="decimal" placeholder="Enter cash price" min="0" step="10" aria-label="Cash price, per traveler">
+      </div>
+      <p class="wc-sub">per traveler</p>
+    </div>
+    <div class="wc-vs" aria-hidden="true">vs.</div>
+    <div class="wc-col wc-miles">
+      <p class="wc-label"><span class="ci"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg></span>Use Miles</p>
+      <div class="wc-input-row">
+        <input type="number" id="milesRequired" inputmode="numeric" placeholder="Enter miles" min="0" step="500" aria-label="Miles required, per traveler">
+        <span class="wc-suffix">miles</span>
+      </div>
+      <div class="wc-taxrow">
+        <span class="wc-prefix">+ $</span>
+        <input type="number" id="awardTaxes" inputmode="decimal" placeholder="Enter taxes" min="0" step="0.10" aria-label="Award taxes and fees, per traveler">
+        <span class="wc-taxlabel">taxes &amp; fees</span>
+      </div>
+    </div>
   </div>
-  <div class="compare-top-vs" aria-hidden="true">vs.</div>
-  <div class="compare-top-side">
-    <p class="ct-label">Award</p>
-    <p class="ct-value" id="topAwardValue">0 <span class="ct-unit">miles</span></p>
-    <p class="ct-sub" id="topAwardSub">+ $0.00 taxes &amp; fees</p>
-  </div>
+</section>
+
+<div class="empty-prompt" id="emptyPrompt">
+  <div class="empty-prompt-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <h2>Enter your flight details</h2>
+  <p>Add the cash price and the miles required above to see whether paying cash or using miles works out better.</p>
 </div>
+
+<div id="resultsArea">
 
 <div class="verdict-banner" id="verdictBanner">
   <div class="verdict-icon" id="verdictIcon"></div>
@@ -462,6 +510,8 @@ details.assumptions[open] summary:before{content:'▾ '}
   </div>
 </div>
 
+</div>
+
 <p class="footnote">American Airlines–specific tool. Not affiliated with American Airlines or AAdvantage. Figures are estimates for planning — always confirm exact miles, taxes, and fees at checkout.</p>
 
 </div>
@@ -510,14 +560,14 @@ details.assumptions[open] summary:before{content:'▾ '}
 
   function render(){
     var inputs = readInputs();
+
+    // ---- Empty-state gate: don't show a recommendation until there's enough to go on ----
+    var hasCoreInputs = inputs.cashFarePerPerson > 0 && inputs.milesPerPerson > 0;
+    document.body.classList.toggle('has-data', hasCoreInputs);
+    if (!hasCoreInputs) return;
+
     var r = AACalc.calculateFullComparison(inputs);
     var hasCard = inputs.cardKey !== 'none';
-
-    // ---- Top cash vs. award summary ----
-    $('topCashValue').textContent = fmtUSD(inputs.cashFarePerPerson);
-    $('topCashSub').textContent = inputs.travelers > 1 ? ('per traveler (×' + inputs.travelers + ')') : 'per traveler';
-    $('topAwardValue').innerHTML = fmtMiles(inputs.milesPerPerson) + ' <span class="ct-unit">miles</span>';
-    $('topAwardSub').textContent = '+ ' + fmtUSD(inputs.awardTaxesPerPerson) + ' taxes & fees' + (inputs.travelers > 1 ? ' (×' + inputs.travelers + ')' : '');
 
     // ---- Verdict banner ----
     var banner = $('verdictBanner');
